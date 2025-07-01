@@ -44,23 +44,6 @@ Test cases are defined in `scripts/generate_test_data.py` as a list of dictionar
                         └─────────────────┘
 ```
 
-```
-anomaly-correction-agent/
-├── agents/
-│   ├── __init__.py
-│   ├── anomaly_correction_agent.py
-│   └── feedback_loop.py
-├── models/
-│   ├── __init__.py
-│   └── field_patterns.json
-├── scripts/
-│   ├── __init__.py
-│   └── generate_test_data.py
-├── requirements.txt
-├── main.py
-└── README.md
-```
-
 ## Key Features
 
 ### 1. Intelligent Field Classification
