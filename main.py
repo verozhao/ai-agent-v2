@@ -37,6 +37,8 @@ async def main():
         print(f"\n{'='*30}\nTEST CASE {i+1}\n{'='*30}")
         extracted = case['extracted']
         audited = case['audited']
+        pattern_type = case.get('pattern_type', 'unknown')
+        print(f"Pattern type: {pattern_type}")
         print("Extracted (raw):", extracted)
         result = await feedback_loop.process_document(extracted, f"doc_{i+1}")
         corrections = feedback_loop.pending_validations[f"doc_{i+1}"]["corrections"]
@@ -49,9 +51,37 @@ async def main():
             print("No auto-correction. Sending to human audit (simulated).")
         # Simulate human audit (always use audited version)
         await feedback_loop.receive_validation(f"doc_{i+1}", audited)
+        # Online learning: update agent with feedback
+        accepted = (result["corrected_data"] == audited)
+        await agent.receive_feedback(audited, accepted)
         print("Audited (ground truth):", audited)
         print(f"Feedback loop metrics: {feedback_loop.metrics}")
+        print(f"Agent pattern weights: {getattr(agent, 'pattern_weights', {})}")
     print("\n✓ All test cases completed!")
+    # Visualize learning curve
+    try:
+        import matplotlib.pyplot as plt
+        curve = agent.get_learning_curve()
+        if curve:
+            weights = [x['weight'] for x in curve]
+            rewards = [x['reward'] for x in curve]
+            epsilons = [x['epsilon'] for x in curve]
+            plt.figure(figsize=(10,5))
+            plt.subplot(2,1,1)
+            plt.plot(weights, label='Pattern Weight')
+            plt.plot(epsilons, label='Epsilon (Exploration Rate)')
+            plt.legend()
+            plt.title('Agent Learning Curve')
+            plt.subplot(2,1,2)
+            plt.plot(rewards, label='Reward')
+            plt.legend()
+            plt.xlabel('Feedback Step')
+            plt.tight_layout()
+            plt.show()
+        else:
+            print('No learning curve data to plot.')
+    except ImportError:
+        print('matplotlib not installed. Run `pip install matplotlib` to see learning curve plots.')
 
 if __name__ == "__main__":
     asyncio.run(main())

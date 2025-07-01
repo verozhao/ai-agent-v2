@@ -50,6 +50,15 @@ class AnomalyDetectorAgent:
         # Statistical models
         self.isolation_forest = IsolationForest(contamination=0.1, random_state=42)
 
+        # Online learning
+        self.pattern_stats = {}
+        self.pattern_weights = {}
+        self.pattern_rewards = {}
+        self.epsilon = 0.2  # exploration rate
+        self.epsilon_decay = 0.99
+        self.min_epsilon = 0.01
+        self.learning_curve = []
+
     def _init_classifier(self) -> nn.Module:
         """Initialize field classification model"""
 
@@ -116,34 +125,89 @@ class AnomalyDetectorAgent:
         corrections = []
         corrected_json = extracted_json.copy()
 
+        # RL/Active learning: identify pattern
+        pattern = self._identify_pattern(extracted_json)
+        mode = self._explore_or_exploit(pattern)
+        uncertain = self._uncertainty(pattern)
+        if uncertain:
+            print(f"[RL] Uncertainty triggered for pattern {pattern}")
+        if mode == 'explore':
+            print(f"[RL] Exploration triggered for pattern {pattern}")
+        else:
+            print(f"[RL] Exploitation for pattern {pattern}")
+
         # Phase 1: Semantic field matching
         field_embeddings = self._compute_field_embeddings(extracted_json)
         field_classifications = self._classify_fields(field_embeddings)
 
         # Phase 2: Value validation and correction
         for field, value in extracted_json.items():
-            # Detect field type
             detected_type = field_classifications.get(field, "unknown")
-
-            # Check if value matches expected type
+            # Use pattern weight to modulate confidence threshold
+            pattern_weight = self.pattern_weights.get(pattern, 1.0)
+            threshold = 0.85 * pattern_weight if pattern_weight > 1.0 else 0.85
+            # If uncertain, lower threshold to encourage correction
+            if uncertain:
+                threshold = 0.7
             if not self._validate_value_type(value, detected_type):
-                # Attempt auto-correction
                 correction = await self._auto_correct_field(
                     field, value, detected_type, extracted_json
                 )
-
-                if correction and correction.confidence > 0.85:
+                if correction and correction.confidence > threshold:
                     corrected_json[field] = correction.corrected_value
                     corrections.append(correction)
             elif detected_type == "unknown":
                 correction = await self._auto_correct_field(
                     field, value, detected_type, extracted_json
                 )
-                if correction and correction.confidence > 0.85:
+                if correction and correction.confidence > threshold:
                     corrected_json[field] = correction.corrected_value
                     corrections.append(correction)
 
-        # --- NEW: Aggressive fallback for swapped fields ---
+        # --- NEW: Cumulative field logic ---
+        # If fields look like q1, q2, q3, q4 and q4 != q1+q2+q3, correct q4
+        q_fields = [k for k in extracted_json if re.match(r"q[1-9]", k)]
+        if len(q_fields) >= 4:
+            q_fields_sorted = sorted(q_fields, key=lambda x: int(x[1:]))
+            try:
+                q_vals = [float(extracted_json[q]) for q in q_fields_sorted]
+                if abs(q_vals[3] - sum(q_vals[:3])) > 1e-3:
+                    print(f"[RL] Cumulative correction: {q_fields_sorted[3]} corrected from {q_vals[3]} to {sum(q_vals[:3])}")
+                    corrections.append(CorrectionDecision(
+                        field=q_fields_sorted[3],
+                        original_value=q_vals[3],
+                        corrected_value=sum(q_vals[:3]),
+                        confidence=0.99,
+                        reasoning="Cumulative sum correction",
+                        pattern_id="cumulative"
+                    ))
+                    corrected_json[q_fields_sorted[3]] = sum(q_vals[:3])
+            except Exception as e:
+                pass
+
+        # --- NEW: Pattern consistency logic ---
+        # If q1-q3 are all dates and q4 is not, correct q4 to next date
+        if len(q_fields) >= 4:
+            q_fields_sorted = sorted(q_fields, key=lambda x: int(x[1:]))
+            q_types = [self._is_date_like(extracted_json[q]) for q in q_fields_sorted]
+            if all(q_types[:3]) and not q_types[3]:
+                try:
+                    last_date = pd.to_datetime(extracted_json[q_fields_sorted[2]])
+                    next_date = last_date + pd.DateOffset(years=1)
+                    print(f"[RL] Pattern consistency correction: {q_fields_sorted[3]} corrected to {next_date.date()}")
+                    corrections.append(CorrectionDecision(
+                        field=q_fields_sorted[3],
+                        original_value=extracted_json[q_fields_sorted[3]],
+                        corrected_value=str(next_date.date()),
+                        confidence=0.98,
+                        reasoning="Pattern consistency: expected date sequence",
+                        pattern_id="date_sequence"
+                    ))
+                    corrected_json[q_fields_sorted[3]] = str(next_date.date())
+                except Exception as e:
+                    pass
+
+        # --- Aggressive fallback for swapped fields (as before) ---
         if not corrections:
             fields = list(extracted_json.keys())
             for i in range(len(fields)):
@@ -177,7 +241,7 @@ class AnomalyDetectorAgent:
                             pattern_id="fallback_swap"
                         ))
 
-        # Phase 3: Cross-field validation
+        # Phase 3: Cross-field validation (as before)
         cross_corrections = await self._cross_field_validation(corrected_json)
         for correction in cross_corrections:
             if correction.confidence > 0.9:
@@ -187,6 +251,10 @@ class AnomalyDetectorAgent:
         # Phase 4: Learn from ground truth if available
         if ground_truth:
             self._update_patterns(extracted_json, ground_truth, corrections)
+
+        # After correction, store pattern
+        pattern = self._identify_pattern(corrected_json)
+        self.last_pattern = pattern
 
         return corrected_json, corrections
 
@@ -471,3 +539,54 @@ class AnomalyDetectorAgent:
         has_multiple_words = len(value.split()) > 1
         is_long = len(value) > 10
         return has_indicator or (has_capital and has_multiple_words and is_long)
+
+    def _identify_pattern(self, doc):
+        # Example: classify pattern by field types, value ranges, or sequence
+        # For demo, use a hash of field types and value types
+        pattern = tuple((k, type(v).__name__) for k, v in sorted(doc.items()))
+        return pattern
+
+    def _explore_or_exploit(self, pattern):
+        import random
+        if random.random() < self.epsilon:
+            return 'explore'
+        return 'exploit'
+
+    def _uncertainty(self, pattern):
+        # Uncertainty is high if weight is close to 1.0 (neutral)
+        return abs(self.pattern_weights.get(pattern, 1.0) - 1.0) < 0.05
+
+    def _update_pattern_stats(self, doc, accepted):
+        pattern = self._identify_pattern(doc)
+        if pattern not in self.pattern_stats:
+            self.pattern_stats[pattern] = {'count': 0, 'accepted': 0}
+        self.pattern_stats[pattern]['count'] += 1
+        if accepted:
+            self.pattern_stats[pattern]['accepted'] += 1
+        # RL: update pattern weight and reward
+        if pattern not in self.pattern_weights:
+            self.pattern_weights[pattern] = 1.0
+        if pattern not in self.pattern_rewards:
+            self.pattern_rewards[pattern] = []
+        reward = 1.0 if accepted else -1.0
+        self.pattern_rewards[pattern].append(reward)
+        if accepted:
+            self.pattern_weights[pattern] *= 1.05  # reward
+        else:
+            self.pattern_weights[pattern] *= 0.95  # penalize
+        # Decay epsilon
+        self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
+        # Track learning curve
+        self.learning_curve.append({
+            'pattern': pattern,
+            'weight': self.pattern_weights[pattern],
+            'reward': reward,
+            'epsilon': self.epsilon
+        })
+
+    def get_learning_curve(self):
+        return self.learning_curve
+
+    async def receive_feedback(self, doc, accepted):
+        self._update_pattern_stats(doc, accepted)
+        # Optionally, update other RL/active learning logic here

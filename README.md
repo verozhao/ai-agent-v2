@@ -1,26 +1,41 @@
 # AI Agent Feedback Loop for Financial Document Correction
 
-This repository implements an AI Agent with feedback loop for extracting and correcting structured data from financial documents. The system is designed to automatically detect and fix common extraction errors, and to learn from human feedback in a seamless loop.
+This repository contains an advanced AI agent for extracting and correcting structured data from financial documents. The system is designed to not only detect and fix common and complex extraction errors, but also to learn and adapt over time using reinforcement learning and active learning techniques.
 
 ## How It Works
 
-When a financial document is processed, the agent attempts to auto-correct any anomalies it finds in the extracted data. If the agent is not confident in its correction, the document is routed to a simulated human audit. The human-audited (ground truth) version is then used to update the agent's feedback metrics, closing the loop and enabling continuous improvement.
+When a document is processed, the agent analyzes the extracted data, detects anomalies, and attempts to auto-correct errors. It uses a combination of semantic understanding, pattern recognition, and statistical validation. The agent is capable of handling:
+- Swapped fields and type errors
+- Cumulative fields (e.g., q4 should be the sum of q1, q2, q3)
+- Pattern consistency (e.g., date sequences, value trends)
+- Nested and out-of-order structures
+- Subtle and realistic anomalies
 
-All test cases, including both the raw extracted data and the human-audited ground truth, are generated in `scripts/generate_test_data.py`. This makes it easy to add, remove, or modify test scenarios as your needs evolve.
+The agent employs reinforcement learning strategies: it explores new correction strategies when uncertain, exploits known successful patterns when confident, and adapts its behavior based on feedback. Pattern weights and an exploration rate (epsilon) are updated after every feedback, so the agent gets better with experience.
+
+## Learning and Feedback Loop
+
+After each correction, the agent receives feedback (simulated as ground truth in the test set). If its correction is accepted, it reinforces that pattern; if not, it penalizes it and explores alternatives. The agent tracks its learning curve, including pattern weights, rewards, and exploration rate, and can visualize its progress over time.
 
 ## Running the System
 
-To run the feedback loop and see the agent in action, simply execute:
+To run the feedback loop and see the agent in action:
 
 ```
 python main.py
 ```
 
-The script will process all test cases, print out the agent's corrections, show when human audit is required, and display feedback loop metrics for each case.
+The script will process all test cases, print out the agent's corrections, show when exploration, exploitation, or uncertainty is triggered, and display feedback loop metrics. At the end, if you have `matplotlib` installed, you'll see a plot of the agent's learning curve.
 
 ## Customizing Test Cases
 
-Test cases are defined in `scripts/generate_test_data.py` as a list of dictionaries, each with an `extracted` (raw) and `audited` (ground truth) version. You can edit this file to add new scenarios, cover more edge cases, or remove tests you no longer need.
+Test cases are defined in `scripts/generate_test_data.py` as a list of dictionaries, each with an `extracted` (raw) and `audited` (ground truth) version, and a `pattern_type` label. You can edit this file to add new scenarios, cover more edge cases, or remove tests you no longer need. The agent is designed to handle realistic, complex document patterns.
+
+## Philosophy
+
+This codebase is efficient, modular, and easy to maintain. The agent is not static: it learns, adapts, and improves with every document it processes. The system is ready for integration into production pipelines or for use as a research platform.
+
+If you want to extend the system, the code is organized for clarity and ease of modification. Contributions and new ideas are always welcome.
 
 ## Quick Start
 

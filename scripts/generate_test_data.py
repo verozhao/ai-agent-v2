@@ -88,110 +88,116 @@ def generate_test_set():
 
 def generate_all_test_cases():
     return [
-        # Q1: Normal swap
+        # Case 1: Cumulative fields, q4 should be sum of q1-q3
         {
+            'pattern_type': 'cumulative',
             'extracted': {
-                'fund_name': '2019-03-15',
-                'investment_date': 'Blackstone Capital Partners VII',
-                'exit_date': '2024-01-20',
-                'irr': '45.2%',
-                'multiple': '2.8x',
-                'investment_amount': '50000000',
-                'exit_value': 140000000
+                'q1': 100000,
+                'q2': 150000,
+                'q3': 200000,
+                'q4': 400000  # correct
             },
             'audited': {
-                'fund_name': 'Blackstone Capital Partners VII',
+                'q1': 100000,
+                'q2': 150000,
+                'q3': 200000,
+                'q4': 450000  # should be sum
+            }
+        },
+        # Case 2: Pattern consistency, q1-q3 are dates, q4 is not
+        {
+            'pattern_type': 'date_sequence',
+            'extracted': {
+                'q1': '2020-01-01',
+                'q2': '2021-01-01',
+                'q3': '2022-01-01',
+                'q4': 'not a date'
+            },
+            'audited': {
+                'q1': '2020-01-01',
+                'q2': '2021-01-01',
+                'q3': '2022-01-01',
+                'q4': '2023-01-01'
+            }
+        },
+        # Case 3: Out-of-order fields, agent should reorder
+        {
+            'pattern_type': 'order',
+            'extracted': {
+                'fund_name': '2021-05-01',
+                'investment_date': 'Blackstone Fund',
+                'exit_date': '2024-01-20',
+                'irr': '25.0%'
+            },
+            'audited': {
+                'fund_name': 'Blackstone Fund',
+                'investment_date': '2021-05-01',
+                'exit_date': '2024-01-20',
+                'irr': '25.0%'
+            }
+        },
+        # Case 4: Nested structure, agent should flatten or correct
+        {
+            'pattern_type': 'nested',
+            'extracted': {
+                'fund': {
+                    'name': 'Apollo Fund',
+                    'date': '2019-03-15'
+                },
+                'irr': '18.0%'
+            },
+            'audited': {
+                'fund_name': 'Apollo Fund',
                 'investment_date': '2019-03-15',
-                'exit_date': '2024-01-20',
-                'irr': '24.5%',
-                'multiple': '2.8x',
-                'investment_amount': 50000000,
-                'exit_value': 140000000
+                'irr': '18.0%'
             }
         },
-        # Q2: Weird/edge case (eval set 2)
+        # Case 5: Subtle type error, cumulative and pattern
         {
+            'pattern_type': 'cumulative_type',
             'extracted': {
-                'fund_name': 'Apollo Fund',
-                'investment_date': '2021-13-01',  # Invalid month
-                'exit_date': '2023-12-31',
-                'irr': '200%',  # Impossible IRR
-                'multiple': '1.1x',
-                'investment_amount': 1000000,
-                'exit_value': 1100000
+                'q1': '100000',
+                'q2': 150000,
+                'q3': 200000,
+                'q4': 450000
             },
             'audited': {
-                'fund_name': 'Apollo Fund',
-                'investment_date': '2021-01-13',
-                'exit_date': '2023-12-31',
-                'irr': '4.8%',
-                'multiple': '1.1x',
-                'investment_amount': 1000000,
-                'exit_value': 1100000
+                'q1': 100000,
+                'q2': 150000,
+                'q3': 200000,
+                'q4': 450000
             }
         },
-        # Q3: New anomaly (missing field)
+        # Case 6: Inconsistent totals, agent should flag
         {
+            'pattern_type': 'inconsistent_total',
             'extracted': {
-                'fund_name': 'Carlyle Growth',
-                'investment_date': '2018-05-10',
-                'exit_date': '2022-08-15',
-                'irr': '18.9%',
-                # missing multiple
-                'investment_amount': 2000000,
-                'exit_value': 3000000
+                'revenue_q1': 10000,
+                'revenue_q2': 20000,
+                'revenue_q3': 30000,
+                'total_revenue': 50000  # should be 60000
             },
             'audited': {
-                'fund_name': 'Carlyle Growth',
-                'investment_date': '2018-05-10',
-                'exit_date': '2022-08-15',
-                'irr': '18.9%',
-                'multiple': '1.5x',
-                'investment_amount': 2000000,
-                'exit_value': 3000000
+                'revenue_q1': 10000,
+                'revenue_q2': 20000,
+                'revenue_q3': 30000,
+                'total_revenue': 60000
             }
         },
-        # Q4: Extra field
+        # Case 7: Pattern break, q1-q3 are similar, q4 is outlier
         {
+            'pattern_type': 'pattern_break',
             'extracted': {
-                'fund_name': 'KKR Fund',
-                'investment_date': '2017-07-01',
-                'exit_date': '2021-07-01',
-                'irr': '12.0%',
-                'multiple': '1.6x',
-                'investment_amount': 5000000,
-                'exit_value': 8000000,
-                'extra_field': 'should be ignored'
+                'q1': 100,
+                'q2': 105,
+                'q3': 110,
+                'q4': 10  # outlier
             },
             'audited': {
-                'fund_name': 'KKR Fund',
-                'investment_date': '2017-07-01',
-                'exit_date': '2021-07-01',
-                'irr': '12.0%',
-                'multiple': '1.6x',
-                'investment_amount': 5000000,
-                'exit_value': 8000000
-            }
-        },
-        # Q5: Type error
-        {
-            'extracted': {
-                'fund_name': 'Bain Capital',
-                'investment_date': '2016-03-20',
-                'exit_date': '2020-03-20',
-                'irr': 0.15,  # Should be percentage string
-                'multiple': 1.7,
-                'investment_amount': '4000000',
-                'exit_value': '6800000'
-            },
-            'audited': {
-                'fund_name': 'Bain Capital',
-                'investment_date': '2016-03-20',
-                'exit_date': '2020-03-20',
-                'irr': '15.0%',
-                'multiple': '1.7x',
-                'investment_amount': 4000000,
-                'exit_value': 6800000
+                'q1': 100,
+                'q2': 105,
+                'q3': 110,
+                'q4': 115
             }
         }
     ]

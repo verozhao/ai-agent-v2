@@ -56,19 +56,31 @@ class FeedbackLoop:
             return
 
         pending = self.pending_validations[document_id]
+        corrections = pending["corrections"]
+        corrected = pending["corrected"]
+        original = pending["original"]
 
+        # Track which fields were corrected
+        corrected_fields = {c.field for c in corrections}
         # Compare corrections with validated data
-        for correction in pending["corrections"]:
+        for correction in corrections:
             field = correction.field
-
             if field in validated_json:
                 if validated_json[field] == correction.corrected_value:
                     self.metrics["accepted_corrections"] += 1
                 else:
                     self.metrics["rejected_corrections"] += 1
 
+        # NEW: Penalize missed corrections (fields that differ in validated vs corrected, but not in corrections)
+        for field in validated_json:
+            if field not in corrected_fields and field in original:
+                if validated_json[field] != corrected.get(field, original[field]):
+                    self.metrics["rejected_corrections"] += 1
+                    # Teach agent from missed correction
+                    self.agent._learn_new_pattern(field, original[field], validated_json[field], original)
+
         # Update agent with ground truth
-        self.agent._update_patterns(pending["original"], validated_json, pending["corrections"])
+        self.agent._update_patterns(original, validated_json, corrections)
 
         # Update accuracy metric
         total = self.metrics["accepted_corrections"] + self.metrics["rejected_corrections"]
