@@ -5,6 +5,10 @@ Main execution entry point for the Anomaly Detection & Auto-Correction Agent
 import asyncio
 import json
 import logging
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from agents import AnomalyDetectorAgent, FeedbackLoop
 
 # Configure logging
