@@ -71,7 +71,7 @@ class FeedbackLoop:
                 else:
                     self.metrics["rejected_corrections"] += 1
 
-        # NEW: Penalize missed corrections (fields that differ in validated vs corrected, but not in corrections)
+        # Penalize missed corrections (fields that differ in validated vs corrected, but not in corrections)
         for field in validated_json:
             if field not in corrected_fields and field in original:
                 if validated_json[field] != corrected.get(field, original[field]):
@@ -87,5 +87,4 @@ class FeedbackLoop:
         if total > 0:
             self.metrics["accuracy"] = self.metrics["accepted_corrections"] / total
 
-        # Clean up
         del self.pending_validations[document_id]

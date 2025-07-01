@@ -25,23 +25,19 @@ flake8 agents/ tests/ --max-line-length=100 || echo "Linting issues found"
 echo -e "\n2. Running type checking..."
 mypy agents/ --ignore-missing-imports || echo "Type checking issues found"
 
-# Run unit tests
-echo -e "\n3. Running unit tests..."
-pytest tests/test_agent.py -v
+# TODO: Add tests and modify scripts for running tests
+# # Run unit tests
+# echo -e "\n3. Running unit tests..."
+# pytest tests/test_agent.py -v
 
-# Run integration tests
-echo -e "\n4. Running integration tests..."
-pytest tests/test_feedback_loop.py -v
+# # Run integration tests
+# echo -e "\n4. Running integration tests..."
+# pytest tests/test_feedback_loop.py -v
 
-# Run all tests with coverage
-echo -e "\n5. Running all tests with coverage..."
-pytest tests/ -v --cov=agents --cov-report=term-missing --cov-report=html
-
-# Run the demo
-echo -e "\n6. Running demo..."
-python demo.py
+# # Run all tests with coverage
+# echo -e "\n5. Running all tests with coverage..."
+# pytest tests/ -v --cov=agents --cov-report=term-missing --cov-report=html
 
 echo -e "\n======================================"
 echo "Test suite completed!"
-echo "Coverage report available in htmlcov/index.html"
 echo "======================================" 

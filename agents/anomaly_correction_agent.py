@@ -32,7 +32,7 @@ class CorrectionDecision:
 
 class AnomalyDetectorAgent:
     """
-    Production-ready anomaly detection agent with auto-correction capabilities.
+    Anomaly detection agent with auto-correction capabilities.
     Uses ensemble learning and pattern recognition for high-accuracy corrections.
     """
 
@@ -164,7 +164,6 @@ class AnomalyDetectorAgent:
                     corrected_json[field] = correction.corrected_value
                     corrections.append(correction)
 
-        # --- NEW: Cumulative field logic ---
         # If fields look like q1, q2, q3, q4 and q4 != q1+q2+q3, correct q4
         q_fields = [k for k in extracted_json if re.match(r"q[1-9]", k)]
         if len(q_fields) >= 4:
@@ -185,7 +184,6 @@ class AnomalyDetectorAgent:
             except Exception as e:
                 pass
 
-        # --- NEW: Pattern consistency logic ---
         # If q1-q3 are all dates and q4 is not, correct q4 to next date
         if len(q_fields) >= 4:
             q_fields_sorted = sorted(q_fields, key=lambda x: int(x[1:]))
@@ -207,7 +205,7 @@ class AnomalyDetectorAgent:
                 except Exception as e:
                     pass
 
-        # --- Aggressive fallback for swapped fields (as before) ---
+        # --- Fallback for swapped fields ---
         if not corrections:
             fields = list(extracted_json.keys())
             for i in range(len(fields)):
@@ -241,7 +239,7 @@ class AnomalyDetectorAgent:
                             pattern_id="fallback_swap"
                         ))
 
-        # Phase 3: Cross-field validation (as before)
+        # Phase 3: Cross-field validation
         cross_corrections = await self._cross_field_validation(corrected_json)
         for correction in cross_corrections:
             if correction.confidence > 0.9:
@@ -434,7 +432,6 @@ class AnomalyDetectorAgent:
         """Validate relationships between fields"""
         corrections = []
 
-        # Example: IRR should be reasonable given the dates
         if "irr" in data and "investment_date" in data and "exit_date" in data:
             try:
                 investment_date = pd.to_datetime(data["investment_date"])
@@ -541,8 +538,6 @@ class AnomalyDetectorAgent:
         return has_indicator or (has_capital and has_multiple_words and is_long)
 
     def _identify_pattern(self, doc):
-        # Example: classify pattern by field types, value ranges, or sequence
-        # For demo, use a hash of field types and value types
         pattern = tuple((k, type(v).__name__) for k, v in sorted(doc.items()))
         return pattern
 
@@ -589,4 +584,4 @@ class AnomalyDetectorAgent:
 
     async def receive_feedback(self, doc, accepted):
         self._update_pattern_stats(doc, accepted)
-        # Optionally, update other RL/active learning logic here
+        # TODO: Update other RL/active learning logic here
