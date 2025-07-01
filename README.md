@@ -48,21 +48,21 @@ Test cases are defined in `scripts/generate_test_data.py` as a list of dictionar
 anomaly-correction-agent/
 ├── agents/
 │   ├── __init__.py
-│   ├── anomaly_correction_agent.py    # core agent implementation
-│   └── feedback_loop.py               # feedback loop
+│   ├── anomaly_correction_agent.py    
+│   └── feedback_loop.py              
 ├── models/
 │   ├── __init__.py
-│   └── field_patterns.json            # field pattern definitions
+│   └── field_patterns.json           
 ├── tests/
 │   ├── __init__.py
-│   ├── test_agent.py                  # agent unit tests
-│   └── test_feedback_loop.py          # integration tests
+│   ├── test_agent.py                  
+│   └── test_feedback_loop.py          
 ├── scripts/
 │   ├── __init__.py
-│   └── generate_test_data.py          # test data generator
-├── requirements.txt                   # python dependencies
-├── main.py                           # main execution
-└── README.md                         # readme file
+│   └── generate_test_data.py          
+├── requirements.txt                  
+├── main.py                            
+└── README.md                         
 ```
 
 ## Key Features
@@ -73,9 +73,9 @@ anomaly-correction-agent/
 - Context-aware classification using transformer models
 
 ### 2. Multi-Strategy Auto-Correction
-- Pattern-based: Rule-based corrections for common swap patterns
-- ML-based: Learning from historical corrections
-- Cross-field validation: Ensuring data consistency across fields
+- Pattern-based corrections for common swap patterns
+- ML-based learning from historical corrections
+- Cross-field validation to ensure data consistency across fields
 
 ### 3. Continuous Learning
 - Reinforcement of successful patterns
