@@ -58,7 +58,12 @@ async def main():
     
     # Process through agent
     result = await feedback_loop.process_document(corrupted_json, "test_001")
-    
+
+    # Debug: Print corrections
+    print("\nCorrections:")
+    for correction in feedback_loop.pending_validations["test_001"]["corrections"]:
+        print(f"Field: {correction.field}, Original: {correction.original_value}, Corrected: {correction.corrected_value}, Reason: {correction.reasoning}, Confidence: {correction.confidence}")
+
     print("\nCorrected JSON:")
     print(json.dumps(result["corrected_data"], indent=2))
     
@@ -75,6 +80,20 @@ async def main():
     print(f"Accuracy: {feedback_loop.metrics['accuracy']:.2%}")
     
     print("\n✓ Agent test completed successfully!")
+
+    # Additional test: minimal swapped fields
+    print("\n--- Minimal Swap Test ---")
+    minimal_swapped = {
+        "fund_name": "2019-03-15",
+        "investment_date": "Blackstone Capital Partners VII"
+    }
+    print("Original:", minimal_swapped)
+    result2 = await feedback_loop.process_document(minimal_swapped, "test_002")
+    print("Corrections:")
+    for correction in feedback_loop.pending_validations["test_002"]["corrections"]:
+        print(f"Field: {correction.field}, Original: {correction.original_value}, Corrected: {correction.corrected_value}, Reason: {correction.reasoning}, Confidence: {correction.confidence}")
+    print("Corrected:", result2["corrected_data"])
+    print(f"Corrections made: {result2['corrections_made']}")
 
 
 if __name__ == "__main__":

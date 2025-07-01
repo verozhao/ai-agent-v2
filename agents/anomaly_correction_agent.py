@@ -135,6 +135,47 @@ class AnomalyDetectorAgent:
                 if correction and correction.confidence > 0.85:
                     corrected_json[field] = correction.corrected_value
                     corrections.append(correction)
+            elif detected_type == "unknown":
+                correction = await self._auto_correct_field(
+                    field, value, detected_type, extracted_json
+                )
+                if correction and correction.confidence > 0.85:
+                    corrected_json[field] = correction.corrected_value
+                    corrections.append(correction)
+
+        # --- NEW: Aggressive fallback for swapped fields ---
+        if not corrections:
+            fields = list(extracted_json.keys())
+            for i in range(len(fields)):
+                for j in range(i+1, len(fields)):
+                    f1, f2 = fields[i], fields[j]
+                    v1, v2 = extracted_json[f1], extracted_json[f2]
+                    print(f"[DEBUG] Checking swap: {f1}='{v1}' <-> {f2}='{v2}'")
+                    valid_v2_f1 = self._validate_value_type(v2, field_classifications.get(f1, "unknown"))
+                    valid_v1_f2 = self._validate_value_type(v1, field_classifications.get(f2, "unknown"))
+                    valid_v1_f1 = self._validate_value_type(v1, field_classifications.get(f1, "unknown"))
+                    valid_v2_f2 = self._validate_value_type(v2, field_classifications.get(f2, "unknown"))
+                    print(f"[DEBUG] {f2} in {f1} type valid? {valid_v2_f1}, {f1} in {f2} type valid? {valid_v1_f2}, original valid? {valid_v1_f1}, {valid_v2_f2}")
+                    if (valid_v2_f1 and valid_v1_f2 and not valid_v1_f1 and not valid_v2_f2):
+                        print(f"[DEBUG] Fallback swap triggered for {f1} and {f2}")
+                        corrected_json[f1] = v2
+                        corrected_json[f2] = v1
+                        corrections.append(CorrectionDecision(
+                            field=f1,
+                            original_value=v1,
+                            corrected_value=v2,
+                            confidence=0.93,
+                            reasoning=f"Aggressive fallback: swapped with {f2}",
+                            pattern_id="fallback_swap"
+                        ))
+                        corrections.append(CorrectionDecision(
+                            field=f2,
+                            original_value=v2,
+                            corrected_value=v1,
+                            confidence=0.93,
+                            reasoning=f"Aggressive fallback: swapped with {f1}",
+                            pattern_id="fallback_swap"
+                        ))
 
         # Phase 3: Cross-field validation
         cross_corrections = await self._cross_field_validation(corrected_json)
@@ -193,6 +234,10 @@ class AnomalyDetectorAgent:
 
         validator = self.field_patterns[expected_type]["validator"]
         try:
+            if expected_type == "fund_name":
+                return validator(value) and not self._is_date_like(value)
+            if expected_type == "date":
+                return validator(value) and not self._is_fund_name_like(value)
             return validator(value)
         except:
             return False
@@ -419,6 +464,10 @@ class AnomalyDetectorAgent:
         """Check if value looks like a fund name"""
         if not isinstance(value, str):
             return False
-
-        fund_indicators = ["fund", "capital", "partners", "lp", "llc", "inc", "ventures"]
-        return any(indicator in value.lower() for indicator in fund_indicators)
+        fund_indicators = ["fund", "capital", "partners", "lp", "llc", "inc", "ventures", "management", "equity", "group", "holdings"]
+        value_lower = value.lower()
+        has_indicator = any(indicator in value_lower for indicator in fund_indicators)
+        has_capital = value and value[0].isupper()
+        has_multiple_words = len(value.split()) > 1
+        is_long = len(value) > 10
+        return has_indicator or (has_capital and has_multiple_words and is_long)
