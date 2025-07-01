@@ -18,14 +18,9 @@ The agent employs reinforcement learning strategies: it explores new correction 
 After each correction, the agent receives feedback (simulated as ground truth in the test set). If its correction is accepted, it reinforces that pattern; if not, it penalizes it and explores alternatives. The agent tracks its learning curve, including pattern weights, rewards, and exploration rate, and can visualize its progress over time.
 
 ## Running the System
-
-To run the feedback loop and see the agent in action:
-
 ```
 python main.py
 ```
-
-The script will process all test cases, print out the agent's corrections, show when exploration, exploitation, or uncertainty is triggered, and display feedback loop metrics. At the end, if you have `matplotlib` installed, you'll see a plot of the agent's learning curve.
 
 ## Customizing Test Cases
 
