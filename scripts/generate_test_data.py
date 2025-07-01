@@ -88,116 +88,100 @@ def generate_test_set():
 
 def generate_all_test_cases():
     return [
-        # Case 1: Cumulative fields, q4 should be sum of q1-q3
+        # 1. Cumulative/Total Consistency
         {
-            'pattern_type': 'cumulative',
+            'pattern_type': 'cumulative_total',
             'extracted': {
-                'q1': 100000,
-                'q2': 150000,
-                'q3': 200000,
-                'q4': 400000  # correct
+                'revenue_q1': 10000,
+                'revenue_q2': 15000,
+                'revenue_q3': 20000,
+                'total_revenue': 40000  # should be 45000
             },
             'audited': {
-                'q1': 100000,
-                'q2': 150000,
-                'q3': 200000,
-                'q4': 450000  # should be sum
+                'revenue_q1': 10000,
+                'revenue_q2': 15000,
+                'revenue_q3': 20000,
+                'total_revenue': 45000
             }
         },
-        # Case 2: Pattern consistency, q1-q3 are dates, q4 is not
+        # 2. Date Sequence
         {
             'pattern_type': 'date_sequence',
             'extracted': {
-                'q1': '2020-01-01',
-                'q2': '2021-01-01',
-                'q3': '2022-01-01',
-                'q4': 'not a date'
+                'reporting_period_start': '2023-01-01',
+                'reporting_period_end': '2022-12-31'  # end before start
             },
             'audited': {
-                'q1': '2020-01-01',
-                'q2': '2021-01-01',
-                'q3': '2022-01-01',
-                'q4': '2023-01-01'
+                'reporting_period_start': '2023-01-01',
+                'reporting_period_end': '2023-12-31'
             }
         },
-        # Case 3: Out-of-order fields, agent should reorder
+        # 3. Pattern Consistency (chronological order)
         {
-            'pattern_type': 'order',
+            'pattern_type': 'chronological',
             'extracted': {
-                'fund_name': '2021-05-01',
-                'investment_date': 'Blackstone Fund',
-                'exit_date': '2024-01-20',
-                'irr': '25.0%'
-            },
-            'audited': {
-                'fund_name': 'Blackstone Fund',
                 'investment_date': '2021-05-01',
-                'exit_date': '2024-01-20',
-                'irr': '25.0%'
+                'exit_date': '2020-05-01'  # exit before investment
+            },
+            'audited': {
+                'investment_date': '2021-05-01',
+                'exit_date': '2024-05-01'
             }
         },
-        # Case 4: Nested structure, agent should flatten or correct
+        # 4. Type/Format Error
         {
-            'pattern_type': 'nested',
+            'pattern_type': 'type_error',
             'extracted': {
-                'fund': {
-                    'name': 'Apollo Fund',
-                    'date': '2019-03-15'
-                },
-                'irr': '18.0%'
+                'investment_amount': 'ten million',
+                'exit_value': 20000000
+            },
+            'audited': {
+                'investment_amount': 10000000,
+                'exit_value': 20000000
+            }
+        },
+        # 5. Swapped Fields
+        {
+            'pattern_type': 'swapped_fields',
+            'extracted': {
+                'fund_name': '2022-03-15',
+                'investment_date': 'Blackstone Capital Partners VII'
+            },
+            'audited': {
+                'fund_name': 'Blackstone Capital Partners VII',
+                'investment_date': '2022-03-15'
+            }
+        },
+        # 6. Accounting Equation
+        {
+            'pattern_type': 'accounting_equation',
+            'extracted': {
+                'assets': 100000,
+                'liabilities': 40000,
+                'equity': 30000  # should be 60000
+            },
+            'audited': {
+                'assets': 100000,
+                'liabilities': 40000,
+                'equity': 60000
+            }
+        },
+        # 7. Realistic multi-error case
+        {
+            'pattern_type': 'multi_error',
+            'extracted': {
+                'fund_name': '2018-01-01',
+                'investment_date': 'Apollo Fund',
+                'exit_date': '2017-12-31',  # exit before investment
+                'investment_amount': 'five million',
+                'exit_value': 8000000
             },
             'audited': {
                 'fund_name': 'Apollo Fund',
-                'investment_date': '2019-03-15',
-                'irr': '18.0%'
-            }
-        },
-        # Case 5: Subtle type error, cumulative and pattern
-        {
-            'pattern_type': 'cumulative_type',
-            'extracted': {
-                'q1': '100000',
-                'q2': 150000,
-                'q3': 200000,
-                'q4': 450000
-            },
-            'audited': {
-                'q1': 100000,
-                'q2': 150000,
-                'q3': 200000,
-                'q4': 450000
-            }
-        },
-        # Case 6: Inconsistent totals, agent should flag
-        {
-            'pattern_type': 'inconsistent_total',
-            'extracted': {
-                'revenue_q1': 10000,
-                'revenue_q2': 20000,
-                'revenue_q3': 30000,
-                'total_revenue': 50000  # should be 60000
-            },
-            'audited': {
-                'revenue_q1': 10000,
-                'revenue_q2': 20000,
-                'revenue_q3': 30000,
-                'total_revenue': 60000
-            }
-        },
-        # Case 7: Pattern break, q1-q3 are similar, q4 is outlier
-        {
-            'pattern_type': 'pattern_break',
-            'extracted': {
-                'q1': 100,
-                'q2': 105,
-                'q3': 110,
-                'q4': 10  # outlier
-            },
-            'audited': {
-                'q1': 100,
-                'q2': 105,
-                'q3': 110,
-                'q4': 115
+                'investment_date': '2018-01-01',
+                'exit_date': '2022-12-31',
+                'investment_amount': 5000000,
+                'exit_value': 8000000
             }
         }
     ]
