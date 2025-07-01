@@ -1,0 +1,122 @@
+{
+    "field_patterns": {
+      "date": {
+        "patterns": [
+          "\\d{4}-\\d{2}-\\d{2}",
+          "\\d{2}/\\d{2}/\\d{4}",
+          "\\d{1,2}-[A-Za-z]{3}-\\d{4}"
+        ],
+        "common_fields": [
+          "date",
+          "transaction_date",
+          "settlement_date",
+          "trade_date",
+          "investment_date",
+          "exit_date",
+          "closing_date",
+          "valuation_date"
+        ],
+        "examples": [
+          "2024-01-15",
+          "01/15/2024",
+          "15-Jan-2024"
+        ]
+      },
+      "fund_name": {
+        "patterns": [
+          "[A-Z][A-Za-z\\s&]+(?:Fund|LP|LLC|Inc|Partners|Capital)",
+          "[A-Z]{2,}\\s+[A-Za-z]+"
+        ],
+        "common_fields": [
+          "fund",
+          "fund_name",
+          "investment_name",
+          "portfolio_company",
+          "gp_name",
+          "manager_name"
+        ],
+        "examples": [
+          "Blackstone Capital Partners VII",
+          "Apollo Global Management",
+          "KKR Americas Fund XII"
+        ]
+      },
+      "amount": {
+        "patterns": [
+          "[\\$]?[\\d,]+\\.?\\d*",
+          "\\d+\\.?\\d*"
+        ],
+        "common_fields": [
+          "amount",
+          "value",
+          "price",
+          "nav",
+          "aum",
+          "investment_amount",
+          "exit_value",
+          "commitment",
+          "distribution"
+        ],
+        "examples": [
+          "$1,000,000",
+          "1000000",
+          "1,000,000.00"
+        ]
+      },
+      "percentage": {
+        "patterns": [
+          "\\d+\\.?\\d*%?",
+          "-?\\d+\\.?\\d*%"
+        ],
+        "common_fields": [
+          "return",
+          "irr",
+          "allocation",
+          "ownership",
+          "carried_interest",
+          "management_fee",
+          "performance"
+        ],
+        "examples": [
+          "15.5%",
+          "15.5",
+          "-2.3%"
+        ]
+      },
+      "multiple": {
+        "patterns": [
+          "\\d+\\.?\\d*x",
+          "\\d+\\.?\\d*X"
+        ],
+        "common_fields": [
+          "multiple",
+          "moic",
+          "tvpi",
+          "dpi",
+          "rvpi"
+        ],
+        "examples": [
+          "2.5x",
+          "2.5X",
+          "1.8x"
+        ]
+      }
+    },
+    "common_errors": {
+      "date_fund_swap": {
+        "description": "Date value in fund name field and vice versa",
+        "detection_confidence": 0.95,
+        "auto_correct": true
+      },
+      "inconsistent_irr": {
+        "description": "IRR doesn't match multiple and time period",
+        "detection_confidence": 0.92,
+        "auto_correct": true
+      },
+      "amount_format": {
+        "description": "Amount has incorrect formatting",
+        "detection_confidence": 0.88,
+        "auto_correct": true
+      }
+    }
+  }

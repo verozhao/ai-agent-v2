@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.cover
+.hypothesis/
+test-results.xml
+coverage.xml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Models and data
+*.pkl
+*.pth
+*.h5
+models/checkpoints/
+data/
+logs/
+
+# Environment
+.env
+.env.local
+
+# Docker
+.dockerignore
+
+# Temporary files
+*.log
+*.tmp
+temp/
+tmp/
