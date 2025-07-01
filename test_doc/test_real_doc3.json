@@ -1,0 +1,13 @@
+{
+  "fund_name": "Blackstone Growth (BXG) III",
+  "reporting_period_start": "2024-01-01", 
+  "reporting_period_end": "2023-12-31",
+  "q1_nav": 45000000,
+  "q2_nav": 52000000,
+  "q3_nav": 48000000,
+  "q4_nav": 140000000,
+  "annual_nav": 185000000,
+  "assets": 200000000,
+  "liabilities": 50000000,
+  "equity": 120000000
+}

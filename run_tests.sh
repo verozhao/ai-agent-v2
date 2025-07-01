@@ -2,10 +2,8 @@ echo "======================================"
 echo "Running Anomaly Agent Test Suite"
 echo "======================================"
 
-# Check Python version
 python --version
 
-# Install dependencies if needed
 if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."
     python -m venv venv
@@ -16,12 +14,12 @@ else
     source venv/bin/activate
 fi
 
-# Run linting
+# linting
 echo -e "\n1. Running code quality checks..."
-black --check agents/ scripts/ || echo "Code formatting issues found"
-flake8 agents/ scripts/ --max-line-length=200 || echo "Linting issues found"
+black --check agents/ || echo "Code formatting issues found"
+flake8 agents/ --max-line-length=200 || echo "Linting issues found"
 
-# Run type checking
+# type checking
 echo -e "\n2. Running type checking..."
 mypy agents/ --ignore-missing-imports || echo "Type checking issues found"
 

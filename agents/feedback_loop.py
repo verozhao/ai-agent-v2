@@ -63,20 +63,30 @@ class FeedbackLoop:
         # Track which fields were corrected
         corrected_fields = {c.field for c in corrections}
         
+        # Track correction accuracy by type
+        correct_corrections = 0
+        incorrect_corrections = 0
+        
         # Compare corrections with validated data
         for correction in corrections:
             field = correction.field
             if field in validated_json:
                 if validated_json[field] == correction.corrected_value:
                     self.metrics["accepted_corrections"] += 1
+                    correct_corrections += 1
                 else:
                     self.metrics["rejected_corrections"] += 1
+                    incorrect_corrections += 1
+                    # Learn from wrong correction
+                    self.agent._learn_new_pattern(field, correction.corrected_value, validated_json[field], original)
 
         # Penalize missed corrections (fields that differ in validated vs corrected, but not in corrections)
+        missed_corrections = 0
         for field in validated_json:
             if field not in corrected_fields and field in original:
                 if validated_json[field] != corrected.get(field, original[field]):
                     self.metrics["rejected_corrections"] += 1
+                    missed_corrections += 1
                     # Teach agent from missed correction with domain knowledge
                     if field == 'equity' and all(k in original for k in ['assets', 'liabilities']):
                         # Teach accounting equation
@@ -86,6 +96,16 @@ class FeedbackLoop:
                         self.agent._learn_new_pattern(field, original[field], validated_json[field], original)
                     else:
                         self.agent._learn_new_pattern(field, original[field], validated_json[field], original)
+        
+        # Enhanced metrics tracking
+        self.metrics.setdefault("correction_breakdown", {
+            "correct_corrections": 0,
+            "incorrect_corrections": 0, 
+            "missed_corrections": 0
+        })
+        self.metrics["correction_breakdown"]["correct_corrections"] += correct_corrections
+        self.metrics["correction_breakdown"]["incorrect_corrections"] += incorrect_corrections
+        self.metrics["correction_breakdown"]["missed_corrections"] += missed_corrections
 
         # Update agent with ground truth
         self.agent._update_patterns(original, validated_json, corrections)
