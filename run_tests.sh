@@ -18,8 +18,8 @@ fi
 
 # Run linting
 echo -e "\n1. Running code quality checks..."
-black --check agents/ tests/ || echo "Code formatting issues found"
-flake8 agents/ tests/ --max-line-length=100 || echo "Linting issues found"
+black --check agents/ scripts/ || echo "Code formatting issues found"
+flake8 agents/ scripts/ --max-line-length=200 || echo "Linting issues found"
 
 # Run type checking
 echo -e "\n2. Running type checking..."

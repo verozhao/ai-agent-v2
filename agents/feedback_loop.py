@@ -2,12 +2,12 @@
 Feedback loop implementation for continuous improvement
 """
 
-from typing import Dict, Any, List, TYPE_CHECKING
+from typing import Dict, Any
 from datetime import datetime
 import numpy as np
 
 
-from .anomaly_correction_agent import AnomalyDetectorAgent, CorrectionDecision
+from .anomaly_correction_agent import AnomalyDetectorAgent
 
 
 class FeedbackLoop:

@@ -3,7 +3,7 @@ Anomaly Detection & Auto-Correction Agent
 Implements intelligent pattern recognition and self-improving correction algorithms
 """
 
-import asyncio
+# import asyncio
 import re
 import json
 from typing import Dict, List, Any, Optional, Tuple
@@ -12,7 +12,7 @@ from datetime import datetime
 import numpy as np
 from collections import defaultdict
 
-import torch
+# import torch
 import torch.nn as nn
 from transformers import AutoTokenizer
 from sentence_transformers import SentenceTransformer
@@ -181,8 +181,6 @@ class AnomalyDetectorAgent:
                         pattern_id="cumulative"
                     ))
                     corrected_json[q_fields_sorted[3]] = sum(q_vals[:3])
-            except Exception as e:
-                pass
 
         # If q1-q3 are all dates and q4 is not, correct q4 to next date
         if len(q_fields) >= 4:
