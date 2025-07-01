@@ -1,13 +1,33 @@
-# Anomaly Detection & Auto-Correction Agent
+# AI Agent Feedback Loop for Financial Document Correction
 
-State-of-the-art AI agent system for intelligent document anomaly detection and auto-correction with continuous learning feedback loop.
+This repository implements an AI Agent with feedback loop for extracting and correcting structured data from financial documents. The system is designed to automatically detect and fix common extraction errors, and to learn from human feedback in a seamless loop.
 
-## 🚀 Quick Start
+## How It Works
+
+When a financial document is processed, the agent attempts to auto-correct any anomalies it finds in the extracted data. If the agent is not confident in its correction, the document is routed to a simulated human audit. The human-audited (ground truth) version is then used to update the agent's feedback metrics, closing the loop and enabling continuous improvement.
+
+All test cases, including both the raw extracted data and the human-audited ground truth, are generated in `scripts/generate_test_data.py`. This makes it easy to add, remove, or modify test scenarios as your needs evolve.
+
+## Running the System
+
+To run the feedback loop and see the agent in action, simply execute:
+
+```
+python main.py
+```
+
+The script will process all test cases, print out the agent's corrections, show when human audit is required, and display feedback loop metrics for each case.
+
+## Customizing Test Cases
+
+Test cases are defined in `scripts/generate_test_data.py` as a list of dictionaries, each with an `extracted` (raw) and `audited` (ground truth) version. You can edit this file to add new scenarios, cover more edge cases, or remove tests you no longer need.
+
+## Quick Start
 
 ```bash
 # Clone and setup
 git clone https://github.com/verozhao/ai-agent-v2
-cd agents/anomaly-correction-agent
+cd agents/anomaly_correction_agent
 
 # Install dependencies
 pip install -r requirements.txt
@@ -19,7 +39,7 @@ python -m pytest tests/
 python main.py
 ```
 
-## 🏗 Architecture
+## Architecture
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
@@ -36,7 +56,7 @@ python main.py
                         └──────────────────┘
 ```
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 anomaly-correction-agent/
@@ -61,7 +81,7 @@ anomaly-correction-agent/
 └── README.md                         # This file
 ```
 
-## 🧠 Key Features
+## Key Features
 
 ### 1. **Intelligent Field Classification**
 - Semantic embedding-based field type detection
@@ -78,7 +98,7 @@ anomaly-correction-agent/
 - Learning from DataOps team validations
 - Adaptive confidence thresholds
 
-## 💻 Usage
+## Usage
 
 ### Basic Example
 
@@ -117,7 +137,7 @@ await feedback_loop.receive_validation("doc_001", ground_truth)
 print(f"Agent accuracy: {feedback_loop.metrics['accuracy']:.2%}")
 ```
 
-## 🐳 Docker Deployment
+## Docker Deployment
 
 ```dockerfile
 # docker/Dockerfile
@@ -152,7 +172,7 @@ services:
       - "8000:8000"
 ```
 
-## 📦 Dependencies
+## Dependencies
 
 ```txt
 # requirements.txt
@@ -167,7 +187,7 @@ pytest>=7.0.0
 pytest-asyncio>=0.21.0
 ```
 
-## 🧪 Testing
+## Testing
 
 ```python
 # tests/test_agent.py
@@ -209,7 +229,7 @@ async def test_irr_calculation_correction():
     assert float(corrected["irr"].replace("%", "")) > 18
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ```python
 # config.py
@@ -227,14 +247,14 @@ class AgentConfig:
     CACHE_SIZE = 1000
 ```
 
-## 📊 Performance Metrics
+## Performance Metrics
 
 - **Accuracy**: 96.5% on common error patterns
 - **Processing Speed**: <100ms per document
 - **Learning Rate**: Improves 2-3% per 100 validations
 - **Memory Usage**: <500MB for model + patterns
 
-## 🚀 Production Deployment
+## Production Deployment
 
 ```bash
 # Build and deploy
@@ -273,7 +293,7 @@ spec:
             cpu: "1000m"
 ```
 
-## 🔍 Monitoring
+## Monitoring
 
 The agent exposes metrics for monitoring:
 
@@ -281,18 +301,3 @@ The agent exposes metrics for monitoring:
 - `accuracy_rate`: Current accuracy percentage
 - `processing_time_seconds`: Processing time histogram
 - `pattern_matches_total`: Successful pattern matches
-
-## 🤝 Contributing
-
-1. Write clean, efficient code
-2. Add tests for new features
-3. Update documentation
-4. Submit PR with clear description
-
-## 📄 License
-
-MIT License - see LICENSE file
-
----
-
-Built with precision at Google AI

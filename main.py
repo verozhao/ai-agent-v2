@@ -7,6 +7,7 @@ import json
 import logging
 import sys
 import os
+import importlib.util
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from agents import AnomalyDetectorAgent, FeedbackLoop
@@ -18,6 +19,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def load_test_cases():
+    spec = importlib.util.spec_from_file_location("generate_test_data", "scripts/generate_test_data.py")
+    test_data = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(test_data)
+    return test_data.generate_all_test_cases()
 
 async def main():
     """Main execution function"""
@@ -26,75 +32,26 @@ async def main():
     # Initialize agent
     agent = AnomalyDetectorAgent()
     feedback_loop = FeedbackLoop(agent)
-    
-    # Generate test case
-    ground_truth = {
-        "fund_name": "Blackstone Capital Partners VII",
-        "investment_date": "2019-03-15",
-        "exit_date": "2024-01-20",
-        "irr": "24.5%",
-        "multiple": "2.8x",
-        "investment_amount": 50000000,
-        "exit_value": 140000000
-    }
-    
-    # Generate corrupted JSON (common errors)
-    corrupted_json = {
-        "fund_name": "2019-03-15",  # Date in fund name field
-        "investment_date": "Blackstone Capital Partners VII",  # Fund name in date field
-        "exit_date": "2024-01-20",
-        "irr": "45.2%",  # Wrong IRR
-        "multiple": "2.8x",
-        "investment_amount": "50000000",
-        "exit_value": 140000000
-    }
-    
-    print("\n" + "="*60)
-    print("ANOMALY DETECTION & AUTO-CORRECTION TEST")
-    print("="*60)
-    
-    print("\nOriginal corrupted JSON:")
-    print(json.dumps(corrupted_json, indent=2))
-    
-    # Process through agent
-    result = await feedback_loop.process_document(corrupted_json, "test_001")
-
-    # Debug: Print corrections
-    print("\nCorrections:")
-    for correction in feedback_loop.pending_validations["test_001"]["corrections"]:
-        print(f"Field: {correction.field}, Original: {correction.original_value}, Corrected: {correction.corrected_value}, Reason: {correction.reasoning}, Confidence: {correction.confidence}")
-
-    print("\nCorrected JSON:")
-    print(json.dumps(result["corrected_data"], indent=2))
-    
-    print(f"\nCorrections made: {result['corrections_made']}")
-    print(f"Confidence: {result['confidence']:.2f}")
-    
-    # Simulate DataOps validation
-    await feedback_loop.receive_validation("test_001", ground_truth)
-    
-    print(f"\nFeedback loop metrics:")
-    print(f"Total corrections: {feedback_loop.metrics['total_corrections']}")
-    print(f"Accepted: {feedback_loop.metrics['accepted_corrections']}")
-    print(f"Rejected: {feedback_loop.metrics['rejected_corrections']}")
-    print(f"Accuracy: {feedback_loop.metrics['accuracy']:.2%}")
-    
-    print("\n✓ Agent test completed successfully!")
-
-    # Additional test: minimal swapped fields
-    print("\n--- Minimal Swap Test ---")
-    minimal_swapped = {
-        "fund_name": "2019-03-15",
-        "investment_date": "Blackstone Capital Partners VII"
-    }
-    print("Original:", minimal_swapped)
-    result2 = await feedback_loop.process_document(minimal_swapped, "test_002")
-    print("Corrections:")
-    for correction in feedback_loop.pending_validations["test_002"]["corrections"]:
-        print(f"Field: {correction.field}, Original: {correction.original_value}, Corrected: {correction.corrected_value}, Reason: {correction.reasoning}, Confidence: {correction.confidence}")
-    print("Corrected:", result2["corrected_data"])
-    print(f"Corrections made: {result2['corrections_made']}")
-
+    test_cases = load_test_cases()
+    for i, case in enumerate(test_cases):
+        print(f"\n{'='*30}\nTEST CASE {i+1}\n{'='*30}")
+        extracted = case['extracted']
+        audited = case['audited']
+        print("Extracted (raw):", extracted)
+        result = await feedback_loop.process_document(extracted, f"doc_{i+1}")
+        corrections = feedback_loop.pending_validations[f"doc_{i+1}"]["corrections"]
+        if corrections:
+            print("Auto-corrected:", result["corrected_data"])
+            print("Corrections:")
+            for c in corrections:
+                print(f"  Field: {c.field}, Original: {c.original_value}, Corrected: {c.corrected_value}, Reason: {c.reasoning}, Confidence: {c.confidence}")
+        else:
+            print("No auto-correction. Sending to human audit (simulated).")
+        # Simulate human audit (always use audited version)
+        await feedback_loop.receive_validation(f"doc_{i+1}", audited)
+        print("Audited (ground truth):", audited)
+        print(f"Feedback loop metrics: {feedback_loop.metrics}")
+    print("\n✓ All test cases completed!")
 
 if __name__ == "__main__":
     asyncio.run(main())

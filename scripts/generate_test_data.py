@@ -86,6 +86,116 @@ def generate_test_set():
     
     return test_set
 
+def generate_all_test_cases():
+    return [
+        # Q1: Normal swap
+        {
+            'extracted': {
+                'fund_name': '2019-03-15',
+                'investment_date': 'Blackstone Capital Partners VII',
+                'exit_date': '2024-01-20',
+                'irr': '45.2%',
+                'multiple': '2.8x',
+                'investment_amount': '50000000',
+                'exit_value': 140000000
+            },
+            'audited': {
+                'fund_name': 'Blackstone Capital Partners VII',
+                'investment_date': '2019-03-15',
+                'exit_date': '2024-01-20',
+                'irr': '24.5%',
+                'multiple': '2.8x',
+                'investment_amount': 50000000,
+                'exit_value': 140000000
+            }
+        },
+        # Q2: Weird/edge case (eval set 2)
+        {
+            'extracted': {
+                'fund_name': 'Apollo Fund',
+                'investment_date': '2021-13-01',  # Invalid month
+                'exit_date': '2023-12-31',
+                'irr': '200%',  # Impossible IRR
+                'multiple': '1.1x',
+                'investment_amount': 1000000,
+                'exit_value': 1100000
+            },
+            'audited': {
+                'fund_name': 'Apollo Fund',
+                'investment_date': '2021-01-13',
+                'exit_date': '2023-12-31',
+                'irr': '4.8%',
+                'multiple': '1.1x',
+                'investment_amount': 1000000,
+                'exit_value': 1100000
+            }
+        },
+        # Q3: New anomaly (missing field)
+        {
+            'extracted': {
+                'fund_name': 'Carlyle Growth',
+                'investment_date': '2018-05-10',
+                'exit_date': '2022-08-15',
+                'irr': '18.9%',
+                # missing multiple
+                'investment_amount': 2000000,
+                'exit_value': 3000000
+            },
+            'audited': {
+                'fund_name': 'Carlyle Growth',
+                'investment_date': '2018-05-10',
+                'exit_date': '2022-08-15',
+                'irr': '18.9%',
+                'multiple': '1.5x',
+                'investment_amount': 2000000,
+                'exit_value': 3000000
+            }
+        },
+        # Q4: Extra field
+        {
+            'extracted': {
+                'fund_name': 'KKR Fund',
+                'investment_date': '2017-07-01',
+                'exit_date': '2021-07-01',
+                'irr': '12.0%',
+                'multiple': '1.6x',
+                'investment_amount': 5000000,
+                'exit_value': 8000000,
+                'extra_field': 'should be ignored'
+            },
+            'audited': {
+                'fund_name': 'KKR Fund',
+                'investment_date': '2017-07-01',
+                'exit_date': '2021-07-01',
+                'irr': '12.0%',
+                'multiple': '1.6x',
+                'investment_amount': 5000000,
+                'exit_value': 8000000
+            }
+        },
+        # Q5: Type error
+        {
+            'extracted': {
+                'fund_name': 'Bain Capital',
+                'investment_date': '2016-03-20',
+                'exit_date': '2020-03-20',
+                'irr': 0.15,  # Should be percentage string
+                'multiple': 1.7,
+                'investment_amount': '4000000',
+                'exit_value': '6800000'
+            },
+            'audited': {
+                'fund_name': 'Bain Capital',
+                'investment_date': '2016-03-20',
+                'exit_date': '2020-03-20',
+                'irr': '15.0%',
+                'multiple': '1.7x',
+                'investment_amount': 4000000,
+                'exit_value': 6800000
+            }
+        }
+    ]
+
 if __name__ == "__main__":
     # Generate test data
     test_data = generate_test_set()
