@@ -164,8 +164,51 @@ class AnomalyDetectorAgent:
                     corrected_json[field] = correction.corrected_value
                     corrections.append(correction)
 
+        # Check accounting equation: Assets = Liabilities + Equity
+        if all(k in corrected_json for k in ['assets', 'liabilities', 'equity']):
+            try:
+                assets = float(corrected_json['assets'])
+                liabilities = float(corrected_json['liabilities'])
+                equity = float(corrected_json['equity'])
+                expected_equity = assets - liabilities
+                
+                if abs(equity - expected_equity) > 0.01:
+                    corrections.append(CorrectionDecision(
+                        field='equity',
+                        original_value=corrected_json['equity'],
+                        corrected_value=expected_equity,
+                        confidence=0.95,
+                        reasoning=f"Equity should equal Assets ({assets}) - Liabilities ({liabilities})",
+                        pattern_id="accounting_equation"
+                    ))
+                    corrected_json['equity'] = expected_equity
+            except:
+                pass
+        for field, value in extracted_json.items():
+            if 'total' in field.lower():
+                # Find related component fields
+                base_name = field.lower().replace('total_', '').replace('_total', '')
+                component_fields = [k for k in extracted_json.keys() 
+                                  if base_name in k.lower() and k != field and 'total' not in k.lower()]
+                if len(component_fields) >= 2:
+                    try:
+                        component_sum = sum(float(extracted_json[f]) for f in component_fields)
+                        current_total = float(value)
+                        if abs(component_sum - current_total) > 0.01:
+                            corrections.append(CorrectionDecision(
+                                field=field,
+                                original_value=value,
+                                corrected_value=component_sum,
+                                confidence=0.95,
+                                reasoning=f"Total should equal sum of {', '.join(component_fields)}",
+                                pattern_id="cumulative_total"
+                            ))
+                            corrected_json[field] = component_sum
+                    except:
+                        pass
+        q_fields = [k for k in extracted_json if re.search(r"q[1-4]", k)]
         # If fields look like q1, q2, q3, q4 and q4 != q1+q2+q3, correct q4
-        q_fields = [k for k in extracted_json if re.match(r"q[1-9]", k)]
+        # q_fields = [k for k in extracted_json if re.match(r"q[1-9]", k)]
         if len(q_fields) >= 4:
             q_fields_sorted = sorted(q_fields, key=lambda x: int(x[1:]))
             try:
@@ -181,6 +224,8 @@ class AnomalyDetectorAgent:
                         pattern_id="cumulative"
                     ))
                     corrected_json[q_fields_sorted[3]] = sum(q_vals[:3])
+            except Exception as e:
+                    pass
 
         # If q1-q3 are all dates and q4 is not, correct q4 to next date
         if len(q_fields) >= 4:

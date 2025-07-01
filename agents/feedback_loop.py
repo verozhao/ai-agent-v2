@@ -62,6 +62,7 @@ class FeedbackLoop:
 
         # Track which fields were corrected
         corrected_fields = {c.field for c in corrections}
+        
         # Compare corrections with validated data
         for correction in corrections:
             field = correction.field
@@ -76,8 +77,15 @@ class FeedbackLoop:
             if field not in corrected_fields and field in original:
                 if validated_json[field] != corrected.get(field, original[field]):
                     self.metrics["rejected_corrections"] += 1
-                    # Teach agent from missed correction
-                    self.agent._learn_new_pattern(field, original[field], validated_json[field], original)
+                    # Teach agent from missed correction with domain knowledge
+                    if field == 'equity' and all(k in original for k in ['assets', 'liabilities']):
+                        # Teach accounting equation
+                        self.agent._learn_new_pattern(field, original[field], validated_json[field], original)
+                    elif 'total' in field.lower():
+                        # Teach cumulative pattern
+                        self.agent._learn_new_pattern(field, original[field], validated_json[field], original)
+                    else:
+                        self.agent._learn_new_pattern(field, original[field], validated_json[field], original)
 
         # Update agent with ground truth
         self.agent._update_patterns(original, validated_json, corrections)
