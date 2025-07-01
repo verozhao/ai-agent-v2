@@ -31,56 +31,43 @@ The script will process all test cases, print out the agent's corrections, show 
 
 Test cases are defined in `scripts/generate_test_data.py` as a list of dictionaries, each with an `extracted` (raw) and `audited` (ground truth) version, and a `pattern_type` label. You can edit this file to add new scenarios, cover more edge cases, or remove tests you no longer need. The agent is designed to handle realistic, complex document patterns.
 
-## Start
-
-```bash
-git clone https://github.com/verozhao/ai-agent-v2
-cd agents/anomaly_correction_agent
-
-pip install -r requirements.txt
-python main.py
-```
-
 ## Architecture
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
 │ Document Input  │────▶│ Anomaly Detector │────▶│ Auto-Correction │
-└─────────────────┘     └──────────────────┘     └────────┬────────┘
-                                                           │
-                        ┌──────────────────┐               │
-                        │  DataOps Review  │◀──────────────┘
-                        └────────┬─────────┘
-                                 │
-                        ┌────────▼─────────┐
-                        │  Feedback Loop   │
-                        │  (Learning)      │
-                        └──────────────────┘
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+                                ▲                          │
+                                │                          │
+                                │                          │
+                                │                          │
+                                │(feedback)                │
+                                │                          ▼
+                        ┌─────────────────┐      ┌──────────────────┐
+                        │  Feedback Loop  │◀─────│  DataOps Review  │
+                        │  (Learning)     │      └──────────────────┘
+                        └─────────────────┘
 ```
-
-## Repository Structure
 
 ```
 anomaly-correction-agent/
 ├── agents/
 │   ├── __init__.py
-│   ├── anomaly_correction_agent.py    # Core agent implementation
-│   └── feedback_loop.py               # Feedback loop manager
+│   ├── anomaly_correction_agent.py    # core agent implementation
+│   └── feedback_loop.py               # feedback loop
 ├── models/
-│   └── field_patterns.json            # Field pattern definitions
+│   ├── __init__.py
+│   └── field_patterns.json            # field pattern definitions
 ├── tests/
 │   ├── __init__.py
-│   ├── test_agent.py                  # Agent unit tests
-│   └── test_feedback_loop.py          # Integration tests
+│   ├── test_agent.py                  # agent unit tests
+│   └── test_feedback_loop.py          # integration tests
 ├── scripts/
-│   └── generate_test_data.py          # Test data generator
-├── docker/
-│   ├── Dockerfile                     # Production Docker image
-│   └── docker-compose.yml             # Local development setup
-├── requirements.txt                   # Python dependencies
-├── setup.py                          # Package setup
-├── main.py                           # Main execution
-└── README.md                         # This file
+│   ├── __init__.py
+│   └── generate_test_data.py          # test data generator
+├── requirements.txt                   # python dependencies
+├── main.py                           # main execution
+└── README.md                         # readme file
 ```
 
 ## Key Features
